@@ -71,10 +71,16 @@ def classify_body_shape_with_waist(
     if any(lm is None for lm in required) or any(lm.visibility < VISIBILITY_MIN for lm in required):
         return BodyShapeResult(shape=BodyShape.UNKNOWN, shoulder_hip_ratio=None, confidence=0.0)
 
-    shoulder_width = shoulder_width_from_mask if shoulder_width_from_mask is not None \
-        else abs(left_shoulder.x - right_shoulder.x)
-    hip_width = hip_width_from_mask if hip_width_from_mask is not None \
-        else abs(left_hip.x - right_hip.x)
+        # Use mask-based widths ONLY if BOTH are available — mixing a mask
+    # value with a landmark value is methodologically worse than using
+    # either method alone (confirmed empirically: this produced a more
+    # distorted ratio than the original landmark-only bug).
+    if shoulder_width_from_mask is not None and hip_width_from_mask is not None:
+        shoulder_width = shoulder_width_from_mask
+        hip_width = hip_width_from_mask
+    else:
+        shoulder_width = abs(left_shoulder.x - right_shoulder.x)
+        hip_width = abs(left_hip.x - right_hip.x)
 
     if hip_width == 0 or shoulder_width == 0:
         return BodyShapeResult(shape=BodyShape.UNKNOWN, shoulder_hip_ratio=None, confidence=0.0)

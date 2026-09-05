@@ -39,6 +39,7 @@ def main():
     print("\nRunning garment segmentation for waist estimate...")
     segmenter = GarmentSegmenter()
     seg_result = segmenter.segment(image_path)
+    print(f"Detected categories: {list(seg_result.masks.keys())}")
 
     from ml.src.anthropometry import estimate_hip_width, estimate_shoulder_width
 
