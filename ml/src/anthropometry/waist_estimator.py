@@ -20,17 +20,42 @@ def _measure_mask_width_at_y(mask: np.ndarray, y_normalized: float) -> float | N
     width_px = xs.max() - xs.min()
     return width_px / w
 
-
 def estimate_waist_width(
     top_mask: np.ndarray,
     shoulder_y_normalized: float,
     hip_y_normalized: float,
+    margin_fraction: float = 0.15,
 ) -> WaistEstimate | None:
+    """
+    Finds the narrowest row of the TOP garment mask between the shoulder
+    and hip y-coordinates — a proxy for waist width.
+
+    margin_fraction excludes this fraction of the scan range from BOTH
+    ends before searching for the minimum. This is needed because the
+    raw shoulder-to-hip range includes the collar area (near shoulder_y)
+    and the garment hem/edge (near hip_y), both of which can register as
+    spuriously narrow rows that have nothing to do with actual waist
+    width — confirmed empirically (see debug logs: narrowest row was
+    found essentially AT the hip_y boundary, at the shirt hem, not at a
+    genuine torso narrowing point).
+    """
     h, w = top_mask.shape
-    y_start = int(shoulder_y_normalized * h)
-    y_end = int(hip_y_normalized * h)
-    if y_start >= y_end:
+
+    y_start_raw = int(shoulder_y_normalized * h)
+    y_end_raw = int(hip_y_normalized * h)
+
+    if y_start_raw >= y_end_raw:
         return None
+
+    full_range = y_end_raw - y_start_raw
+    margin_px = int(full_range * margin_fraction)
+
+    y_start = y_start_raw + margin_px
+    y_end = y_end_raw - margin_px
+
+    if y_start >= y_end:
+        # Range too small after margin — fall back to unmargined range.
+        y_start, y_end = y_start_raw, y_end_raw
 
     min_width_px = None
     min_width_row = None
@@ -52,6 +77,7 @@ def estimate_waist_width(
         return None
 
     confidence = valid_rows / total_rows
+
     return WaistEstimate(
         waist_width_normalized=min_width_px / w,
         row_used_y_normalized=min_width_row / h,

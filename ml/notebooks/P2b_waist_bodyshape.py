@@ -10,6 +10,29 @@ from ml.src.anthropometry import (
 )
 from ml.src.segmentation import GarmentSegmenter, GarmentCategory
 
+import cv2
+import os
+
+def save_debug_mask(image_path, seg_result, out_name="P2b_debug.png"):
+    image = cv2.imread(image_path)
+    overlay = image.copy()
+
+    from ml.src.segmentation import GarmentCategory
+    colors = {
+        GarmentCategory.TOP: (0, 255, 0),
+        GarmentCategory.BOTTOM: (255, 0, 0),
+    }
+    for category, mask in seg_result.masks.items():
+        color = colors.get(category, (255, 255, 255))
+        overlay[mask] = color
+
+    blended = cv2.addWeighted(image, 0.5, overlay, 0.5, 0)
+    out_dir = "ml/notebooks/debug_output"
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, out_name)
+    cv2.imwrite(out_path, blended)
+    print(f"Debug mask saved to: {out_path}")
+
 
 def main():
     if len(sys.argv) < 2:
@@ -39,6 +62,8 @@ def main():
     print("\nRunning garment segmentation for waist estimate...")
     segmenter = GarmentSegmenter()
     seg_result = segmenter.segment(image_path)
+    base_name = os.path.splitext(os.path.basename(image_path))[0]
+    save_debug_mask(image_path, seg_result, out_name=f"P2b_debug_{base_name}.png")
     print(f"Detected categories: {list(seg_result.masks.keys())}")
 
     from ml.src.anthropometry import estimate_hip_width, estimate_shoulder_width
@@ -56,12 +81,21 @@ def main():
             shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
             hip_y = (left_hip.y + right_hip.y) / 2
 
+            print(f"DEBUG: shoulder_y={shoulder_y:.3f}  hip_y={hip_y:.3f}  scan_range_px=({int(shoulder_y*seg_result.image_height)}, {int(hip_y*seg_result.image_height)})")
             waist_estimate = estimate_waist_width(seg_result.masks[GarmentCategory.TOP], shoulder_y, hip_y)
+            if waist_estimate:
+                print(f"DEBUG: narrowest row found at y={waist_estimate.row_used_y_normalized:.3f} "
+                f"(scan range was {shoulder_y:.3f} to {hip_y:.3f})")
             hip_width_from_mask = estimate_hip_width(seg_result.masks[GarmentCategory.BOTTOM], hip_y)
             shoulder_width_from_mask = estimate_shoulder_width(seg_result.masks[GarmentCategory.TOP], shoulder_y)
 
     print(f"Hip width from mask: {hip_width_from_mask}")
     print(f"Shoulder width from mask: {shoulder_width_from_mask}")
+
+    if waist_estimate:
+        print(f"Waist width from mask: {waist_estimate.waist_width_normalized}  (confidence: {waist_estimate.confidence:.2f})")
+    else:
+        print("Waist width from mask: None")
 
     new_result = classify_body_shape_with_waist(
         pose_result, waist_estimate, hip_width_from_mask, shoulder_width_from_mask
