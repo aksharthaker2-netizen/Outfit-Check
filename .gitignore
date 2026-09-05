@@ -12,3 +12,5 @@ build/
 # OS
 Thumbs.db
 .DS_Store
+
+ml/notebooks/debug_output/
