@@ -40,8 +40,13 @@ def main():
     segmenter = GarmentSegmenter()
     seg_result = segmenter.segment(image_path)
 
+    from ml.src.anthropometry import estimate_hip_width, estimate_shoulder_width
+
     waist_estimate = None
-    if GarmentCategory.TOP in seg_result.masks:
+    hip_width_from_mask = None
+    shoulder_width_from_mask = None
+
+    if GarmentCategory.TOP in seg_result.masks and GarmentCategory.BOTTOM in seg_result.masks:
         landmarks = pose_result.landmarks
         left_shoulder, right_shoulder = landmarks.get(11), landmarks.get(12)
         left_hip, right_hip = landmarks.get(23), landmarks.get(24)
@@ -49,21 +54,18 @@ def main():
         if all(lm is not None for lm in [left_shoulder, right_shoulder, left_hip, right_hip]):
             shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
             hip_y = (left_hip.y + right_hip.y) / 2
-            waist_estimate = estimate_waist_width(
-                seg_result.masks[GarmentCategory.TOP], shoulder_y, hip_y
-            )
 
-    if waist_estimate:
-        print(f"Waist width (normalized): {waist_estimate.waist_width_normalized:.4f} "
-              f"(confidence: {waist_estimate.confidence:.2f})")
-    else:
-        print("Could not estimate waist width — falling back to 3-category classification.")
+            waist_estimate = estimate_waist_width(seg_result.masks[GarmentCategory.TOP], shoulder_y, hip_y)
+            hip_width_from_mask = estimate_hip_width(seg_result.masks[GarmentCategory.BOTTOM], hip_y)
+            shoulder_width_from_mask = estimate_shoulder_width(seg_result.masks[GarmentCategory.TOP], shoulder_y)
 
-    new_result = classify_body_shape_with_waist(pose_result, waist_estimate)
-    print(f"\n--- NEW (5-category, landmarks + waist from segmentation) ---")
-    print(f"Shape: {new_result.shape.value}  "
-          f"(shoulder/hip ratio: {new_result.shoulder_hip_ratio:.2f}, "
-          f"confidence: {new_result.confidence:.2f})")
+    print(f"Hip width from mask: {hip_width_from_mask}")
+    print(f"Shoulder width from mask: {shoulder_width_from_mask}")
+
+    new_result = classify_body_shape_with_waist(
+        pose_result, waist_estimate, hip_width_from_mask, shoulder_width_from_mask
+    )
+    print(f"\nShape: {new_result.shape.value}  (ratio: {new_result.shoulder_hip_ratio:.2f}, confidence: {new_result.confidence:.2f})")
 
 
 if __name__ == "__main__":

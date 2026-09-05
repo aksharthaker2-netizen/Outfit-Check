@@ -1,22 +1,24 @@
-"""
-waist_estimator.py — waist-width proxy from garment segmentation mask.
-
-LIMITATION (flagged, not hidden): accuracy depends on how fitted the top
-garment is. A loose/baggy top traces the garment's silhouette, not the
-body's, and will overestimate waist width. Still strictly more signal
-than zero waist information, which is the honest framing for this v1.
-"""
-
 from dataclasses import dataclass
-
 import numpy as np
 
 
 @dataclass
 class WaistEstimate:
-    waist_width_normalized: float  # fraction of image width, comparable to shoulder/hip width
-    row_used_y_normalized: float   # which row (normalized y) the narrowest point was found at
-    confidence: float              # heuristic: how many valid rows had mask pixels at all
+    waist_width_normalized: float
+    row_used_y_normalized: float
+    confidence: float
+
+
+def _measure_mask_width_at_y(mask: np.ndarray, y_normalized: float) -> float | None:
+    h, w = mask.shape
+    y = int(y_normalized * h)
+    y = max(0, min(h - 1, y))
+    row = mask[y]
+    xs = np.where(row)[0]
+    if len(xs) == 0:
+        return None
+    width_px = xs.max() - xs.min()
+    return width_px / w
 
 
 def estimate_waist_width(
@@ -24,19 +26,11 @@ def estimate_waist_width(
     shoulder_y_normalized: float,
     hip_y_normalized: float,
 ) -> WaistEstimate | None:
-    """
-    top_mask: boolean array (H, W), True where the top garment is present
-              (from GarmentSegmenter's TOP category mask).
-    shoulder_y_normalized / hip_y_normalized: average shoulder/hip y from
-              pose landmarks, normalized [0,1] relative to frame height.
-    """
     h, w = top_mask.shape
-
     y_start = int(shoulder_y_normalized * h)
     y_end = int(hip_y_normalized * h)
-
     if y_start >= y_end:
-        return None  # malformed input — shoulder should be above hip in image coords
+        return None
 
     min_width_px = None
     min_width_row = None
@@ -58,9 +52,16 @@ def estimate_waist_width(
         return None
 
     confidence = valid_rows / total_rows
-
     return WaistEstimate(
         waist_width_normalized=min_width_px / w,
         row_used_y_normalized=min_width_row / h,
         confidence=confidence,
     )
+
+
+def estimate_hip_width(bottom_mask: np.ndarray, hip_y_normalized: float) -> float | None:
+    return _measure_mask_width_at_y(bottom_mask, hip_y_normalized)
+
+
+def estimate_shoulder_width(top_mask: np.ndarray, shoulder_y_normalized: float) -> float | None:
+    return _measure_mask_width_at_y(top_mask, shoulder_y_normalized)
