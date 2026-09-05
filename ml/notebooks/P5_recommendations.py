@@ -54,6 +54,10 @@ def main():
     recommendations = generate_recommendations(result, shape_result.shape)
     for i, rec in enumerate(recommendations, start=1):
         print(f"{i}. [{rec.category.value}] {rec.message}")
+        from ml.src.recommendations import phrase_recommendations
+    print("\n--- LLM-Phrased Version ---")
+    natural_text = phrase_recommendations(recommendations)
+    print(natural_text)
 
 
 if __name__ == "__main__":
