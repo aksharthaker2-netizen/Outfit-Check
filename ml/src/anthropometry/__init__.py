@@ -4,7 +4,13 @@ from .height_estimator import (
     CalibrationResult,
     HeightEstimate,
 )
-from .body_shape_classifier import classify_body_shape, BodyShape, BodyShapeResult
+from .body_shape_classifier import (
+    classify_body_shape,
+    classify_body_shape_with_waist,
+    BodyShape,
+    BodyShapeResult,
+)
+from .waist_estimator import estimate_waist_width, WaistEstimate
 
 __all__ = [
     "calibrate_from_reference_object",
@@ -12,6 +18,9 @@ __all__ = [
     "CalibrationResult",
     "HeightEstimate",
     "classify_body_shape",
+    "classify_body_shape_with_waist",
     "BodyShape",
     "BodyShapeResult",
+    "estimate_waist_width",
+    "WaistEstimate",
 ]
