@@ -171,3 +171,32 @@ take a median/mode rather than a single row.
   analogous/triadic/complementary bands), but never triggered against a
   real photo — no test case with the right hue separation (~35–100° or
   140–160°) has been tried yet.
+
+## Follow-up: row-window fix (partial success + new finding)
+
+Fix: `estimate_hip_width` / `estimate_shoulder_width` changed from single-row
+lookup to a windowed median (±3% of frame height) — addresses occlusion at
+exactly one row.
+
+**Result on photo4 (the original motivating case): unresolved.** The bottom
+mask still returns None even with windowing — confirmed via the debug
+overlay that photo4's shirt hem extends so far past the hip landmark that
+no pants are exposed anywhere within a ±3% window of hip_y. This is not a
+windowing-size problem; a fixed landmark-derived y-row cannot work when the
+top garment's actual extent varies this much between photos. Correctly
+identified as a genuine limitation, not chased further with an arbitrarily
+large window (which would start measuring semantically wrong regions).
+Fallback to landmark-only classification remains the correct, safe behavior
+in this case.
+
+**Real v2 fix (not yet implemented):** detect the bottom mask's own topmost
+row with any pixels, and use that as the measurement point instead of a
+fixed hip_y — adapts to garment extent instead of assuming landmark
+placement always lands on exposed fabric.
+
+**Side effect on photo2:** windowing changed hip width slightly (0.367 →
+0.380), which was enough to cross the WAIST_NARROW_RATIO_THRESHOLD (0.85)
+boundary and flip classification from rectangle to hourglass. Confirms
+threshold values (0.85/0.95) are sensitive to small measurement changes —
+these are hand-picked, not tuned against real data, and should be
+revisited once a proper multi-photo evaluation set exists.
