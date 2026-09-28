@@ -1,121 +1,102 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { analyzeOutfit } from './api'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function Swatch({ label, rgb }) {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
+    <div className="swatch">
+      <div
+        className="swatch-box"
+        style={{ backgroundColor: `rgb(${rgb.join(', ')})` }}
+      />
+      <span>{label}</span>
+    </div>
+  )
+}
+
+function App() {
+  const [file, setFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState('')
+
+  function handleFileChange(event) {
+    const chosen = event.target.files[0]
+    if (!chosen) return
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setFile(chosen)
+    setPreviewUrl(URL.createObjectURL(chosen))
+    setStatus('idle')
+    setResult(null)
+    setError('')
+  }
+
+  async function handleAnalyze() {
+    if (!file) return
+    setStatus('loading')
+    setError('')
+    setResult(null)
+    try {
+      const data = await analyzeOutfit(file)
+      setResult(data)
+      setStatus('success')
+    } catch (err) {
+      setError(err.message)
+      setStatus('error')
+    }
+  }
+  const showPhrased =
+  result?.llm_phrased_recommendation &&
+  result.llm_phrased_recommendation !== result.recommendations.join(' ')
+  return (
+    <main className="app">
+      <h1>Outfit Check</h1>
+      <p className="subtitle">
+        Upload a full-body photo and get your outfit scored.
+      </p>
+
+      <input type="file" accept="image/*" onChange={handleFileChange} />
+
+      {previewUrl && (
+        <img className="preview" src={previewUrl} alt="Your selected outfit" />
+      )}
+
+      <button onClick={handleAnalyze} disabled={!file || status === 'loading'}>
+        {status === 'loading' ? 'Analyzing...' : 'Analyze outfit'}
+      </button>
+
+      {status === 'loading' && (
+        <p>Running the model. This can take a few seconds.</p>
+      )}
+      {status === 'error' && <p className="error">{error}</p>}
+
+      {status === 'success' && result && (
+        <section className="result">
+          <p className="score">{Math.round(result.final_score * 100)}%</p>
+          <p>Overall outfit score</p>
+
           <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+            Body shape: <strong>{result.body_shape.replaceAll('_', ' ')}</strong>
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+          <div className="swatches">
+            <Swatch label="Top" rgb={result.top_color} />
+            <Swatch label="Bottom" rgb={result.bottom_color} />
+          </div>
+          <p>Color relationship: {result.harmony_relationship}</p>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
+          <h2>Recommendations</h2>
           <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
+            {result.recommendations.map((rec, i) => (
+              <li key={i}>{rec}</li>
+            ))}
           </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+          {showPhrased && <p>{result.llm_phrased_recommendation}</p>}
+        </section>
+      )}
+    </main>
   )
 }
 
