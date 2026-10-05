@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { analyzeOutfit } from './api'
 import './App.css'
 
+const MAX_FILE_BYTES = 10 * 1024 * 1024 // 10 MB
+
 function Swatch({ label, rgb }) {
   return (
     <div className="swatch">
@@ -33,6 +35,20 @@ function App() {
   function handleFileChange(event) {
     const chosen = event.target.files[0]
     if (!chosen) return
+
+    if (!chosen.type.startsWith('image/')) {
+      setError('Please choose an image file.')
+      setStatus('error')
+      event.target.value = ''
+      return
+    }
+    if (chosen.size > MAX_FILE_BYTES) {
+      setError('That image is too large — please choose one under 10 MB.')
+      setStatus('error')
+      event.target.value = ''
+      return
+    }
+
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setFile(chosen)
     setPreviewUrl(URL.createObjectURL(chosen))
