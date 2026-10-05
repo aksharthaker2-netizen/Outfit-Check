@@ -1,11 +1,231 @@
-.app { width: 100%; max-width: 640px; margin: 0 auto; padding: 2rem 1rem; text-align: left; }
-.subtitle { color: #888; }
-.preview { display: block; max-width: 100%; max-height: 420px; margin: 1rem 0; border-radius: 8px; }
-button { padding: 0.6rem 1.2rem; font-size: 1rem; cursor: pointer; }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.error { color: #d33; }
-.result { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #8884; }
-.score { font-size: 3rem; line-height: 1.2; font-weight: 600; margin: 0 0 0.5rem; }
-.swatches { display: flex; gap: 1.5rem; margin: 1rem 0; }
-.swatch { display: flex; align-items: center; gap: 0.5rem; }
-.swatch-box { width: 36px; height: 36px; border-radius: 6px; border: 1px solid #8886; }
+.page {
+  min-height: 100vh;
+  background: #e8e4dc;
+  display: flex;
+  justify-content: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 580px;
+  padding: 4rem 1.5rem 5rem;
+  color: #2b2724;
+}
+
+.masthead {
+  text-align: center;
+}
+
+.masthead h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 2.5rem;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: 'Inter', sans-serif;
+  color: #6b6459;
+  font-size: 1rem;
+  margin: 0.6rem auto 3rem;
+  max-width: 34ch;
+}
+
+.upload {
+  background: #faf8f4;
+  border: 1px solid #c9c2b4;
+}
+
+.upload-empty {
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+.upload-empty p {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+.upload-empty p:first-child {
+  color: #2b2724;
+  margin-bottom: 0.35rem;
+}
+
+.upload-hint {
+  color: #6b6459;
+  font-size: 0.875rem;
+}
+
+.preview {
+  display: block;
+  width: 100%;
+  max-height: 440px;
+  object-fit: cover;
+  border-bottom: 1px solid #c9c2b4;
+}
+
+.upload-controls {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.file-label {
+  border: 1px solid #c9c2b4;
+  background: #faf8f4;
+  color: #2b2724;
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.file-label:hover {
+  border-color: #2b2724;
+}
+
+button {
+  font-family: 'Inter', sans-serif;
+  border: 1px solid #2b2724;
+  background: #2b2724;
+  color: #faf8f4;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+button:disabled {
+  background: transparent;
+  color: #c9c2b4;
+  border-color: #c9c2b4;
+  cursor: not-allowed;
+}
+
+.status-note,
+.status-error {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  margin-top: 1.25rem;
+  text-align: center;
+}
+
+.status-note {
+  color: #6b6459;
+}
+
+.status-error {
+  color: #2b2724;
+}
+
+.result {
+  margin-top: 3.5rem;
+  text-align: center;
+}
+
+.score-block {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  font-family: 'Fraunces', serif;
+  color: #4a5d4e;
+}
+
+.score {
+  font-size: 4.5rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.score-of {
+  font-size: 1.1rem;
+  color: #6b6459;
+}
+
+.spec-sheet {
+  margin-top: 2rem;
+  border-top: 1px solid #c9c2b4;
+  text-align: left;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #c9c2b4;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+}
+
+.row-label {
+  color: #6b6459;
+}
+
+.row-value {
+  text-align: right;
+  text-transform: capitalize;
+}
+
+.swatches {
+  display: flex;
+  gap: 1rem;
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swatch-box {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  border: 1px solid #c9c2b4;
+}
+
+.swatch-label {
+  text-transform: none;
+}
+
+.rec-heading {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin: 3rem 0 1rem;
+  text-align: left;
+}
+
+.rec-list {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 1.2rem;
+  text-align: left;
+}
+
+.rec-list li + li {
+  margin-top: 0.5rem;
+}
+
+.rec-phrased {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #6b6459;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #c9c2b4;
+  text-align: left;
+}
